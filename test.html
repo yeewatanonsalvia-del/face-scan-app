@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>AI FaceScan - Access Control</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap');
+        
+        /* GENERAL STYLES - เน้นความเป็นระบบ AI/Security */
+        body {
+            font-family: 'Orbitron', sans-serif;
+            background: #000000; /* พื้นหลังดำสนิท */
+            color: #E0E0E0;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            color: #00FFC0; /* สีเขียวมิ้นต์/ไซเบอร์สำหรับหัวข้อ */
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 3.2rem;
+            text-shadow: 0 0 15px rgba(0, 255, 192, 0.8); /* เอฟเฟกต์เรืองแสงชัดเจน */
+            letter-spacing: 3px;
+        }
+
+        .container {
+            background: rgba(10, 10, 10, 0.95); /* กล่องบรรจุสีเข้ม */
+            border-radius: 8px;
+            padding: 40px;
+            border: 2px solid rgba(0, 255, 192, 0.3); /* กรอบภายนอกมีแสง */
+            box-shadow: 0 0 30px rgba(0, 255, 192, 0.1);
+            max-width: 1400px; /* ขยายความกว้าง */
+            width: 100%;
+            display: flex;
+            flex-wrap: wrap; /* จัดเรียงส่วนประกอบ */
+            gap: 30px;
+        }
+
+        /* CONTROL AND STATUS PANEL */
+        .controls {
+            flex-basis: 100%; /* เต็มความกว้าง */
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(45deg, #00FFC0, #00BFFF);
+            color: #000000;
+            border: none;
+            padding: 18px 40px;
+            font-size: 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease-in-out;
+            font-weight: bold;
+            box-shadow: 0 0 15px rgba(0, 255, 192, 0.6);
+        }
+
+        button:hover {
+            transform: scale(1.03);
+            box-shadow: 0 0 25px #00FFC0, 0 0 40px #00BFFF;
+        }
+
+        /* WEBCAM & DETECTED SECTION */
+        .camera-area {
+            flex: 2; /* ใช้พื้นที่มากกว่าฝั่ง Log */
+            min-width: 650px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #webcam-container canvas {
+            border-radius: 10px;
+            border: 3px solid #00FFC0;
+            box-shadow: 0 0 30px rgba(0, 255, 192, 0.5); /* Glowing effect */
+            width: 640px !important;
+            height: 640px !important;
+        }
+
+        /* REAL-TIME PREDICTION TEXT */
+        .prediction {
+            background: rgba(30, 30, 30, 0.8);
+            color: #FF00FF;
+            padding: 15px 30px;
+            margin-top: 20px;
+            border-radius: 5px;
+            font-size: 28px;
+            font-weight: bold;
+            text-align: center;
+            border: 1px solid #FF00FF;
+            box-shadow: 0 0 10px #FF00FF;
+            display: none;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .detected-name {
+            font-size: 36px;
+            font-weight: bold;
+            color: #00FFC0;
+            text-align: center;
+            padding: 25px;
+            margin: 20px 0;
+            background: rgba(0, 0, 0, 0.8);
+            border-radius: 10px;
+            border: 3px solid #00FFC0;
+            animation: glow 1.5s ease-in-out infinite alternate;
+            text-shadow: 0 0 15px #00FFC0;
+        }
+
+        /* STATUS DISPLAY */
+        .status {
+            text-align: center;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 18px;
+            letter-spacing: 1px;
+            flex-basis: 100%;
+        }
+
+        .status.loading {
+            background-color: #333300;
+            color: #FFFF00;
+            border: 1px solid #FFFF00;
+        }
+
+        .status.ready {
+            background-color: #00331a;
+            color: #00FFC0;
+            border: 1px solid #00FFC0;
+        }
+
+        .status.success {
+            background-color: #004d33;
+            color: #FFFFFF;
+            font-size: 22px;
+            border: 2px solid #00FFC0;
+            animation: pulse 1s ease-in-out infinite alternate;
+        }
+        
+        /* ATTENDANCE LOG */
+        .attendance-area {
+            flex: 1; /* ใช้พื้นที่น้อยกว่ากล้อง */
+            min-width: 350px;
+        }
+
+        .attendance-log {
+            height: 100%;
+            border: 1px solid #222;
+            border-radius: 5px;
+            padding: 20px;
+            background: #111;
+        }
+
+        .attendance-log h3 {
+            color: #00FFC0;
+            border-bottom: 2px solid #00FFC0;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .log-entry {
+            padding: 12px;
+            margin: 8px 0;
+            background: #222;
+            border-radius: 4px;
+            border-left: 5px solid #00FFC0;
+            font-size: 15px;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .log-entry.success {
+            background: #006633;
+            color: #FFFFFF;
+            border-left: 5px solid #33FF33;
+            opacity: 1;
+            font-weight: bold;
+        }
+
+        /* KEYFRAME ANIMATIONS */
+        @keyframes glow {
+            from { box-shadow: 0 0 5px #00FFC0; }
+            to { box-shadow: 0 0 25px #00FFC0, 0 0 35px #00FFC0; }
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); box-shadow: 0 0 5px #00FFC0; }
+            100% { transform: scale(1.02); box-shadow: 0 0 25px #00FFC0; }
+        }
+        /* เพิ่ม Media Query สำหรับหน้าจอขนาดเล็ก (เช่น โทรศัพท์มือถือ) */
+@media (max-width: 800px) {
+    
+    .container {
+        padding: 15px;
+        flex-direction: column; /* เปลี่ยนการจัดเรียงจากแนวนอนเป็นแนวตั้ง */
+        gap: 20px;
+    }
+
+    /* ปรับขนาดกล้องให้เล็กลงตามหน้าจอ */
+    .camera-area {
+        min-width: 100%; /* ใช้ความกว้างเต็มที่ */
+    }
+
+    #webcam-container canvas {
+        width: 300px !important; 
+        height: 300px !important;
+        /* ปรับขนาดลดลงเพื่อไม่ให้ล้นหน้าจอมือถือ */
+    }
+
+    /* ปรับขนาดตัวอักษรของหัวข้อที่ถูกตรวจพบให้เล็กลง */
+    .detected-name {
+        font-size: 24px;
+        padding: 15px;
+    }
+
+    /* ปรับขนาดตัวอักษรของสถานะ */
+    .status {
+        font-size: 14px;
+        padding: 10px;
+    }
+
+    .attendance-area {
+        min-width: 100%;
+    }
+}
+    </style>
+</head>
+<body>
+    <h1>🎯 FACE CHECK</h1>
+    
+    <div class="container">
+        
+        <div id="status" class="status loading">คลิก 'เริ่มต้นระบบ' เพื่อเริ่มใช้งาน</div>
+
+        <div class="camera-area">
+            <div id="webcam-container"></div>
+            <div id="label-container"></div>
+            <div id="detected-person" style="display: none;"></div>
+            <div class="controls">
+                <button onclick="init()" id="start-btn">🚀 เริ่มต้นระบบ</button>
+            </div>
+        </div>
+        
+        <div class="attendance-area">
+            <div class="attendance-log">
+                <h3>📋 Access Log</h3>
+                <div id="attendance-list">
+                    <div class="log-entry">รอการตรวจสอบใบหน้า...</div>
+                </div>
+            </div>
+        </div>
+        
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@3.21.0/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@0.8.4/dist/teachablemachine-image.min.js"></script>
+
+    <script>
+        // URL โมเดลของคุณ
+        const URL = "https://teachablemachine.withgoogle.com/models/PUy7hzmCfu/";
+
+        let model, webcam, labelContainer, maxPredictions;
+        let isModelLoaded = false;
+        let attendanceLog = [];
+        let lastDetectedPerson = null; // Cooldown/ป้องกันการบันทึกซ้ำ
+        let currentPredictionDiv = null;
+
+        async function init() {
+            try {
+                updateStatus("กำลังโหลดโมเดล AI...", "loading");
+                
+                const modelURL = URL + "model.json";
+                const metadataURL = URL + "metadata.json";
+
+                model = await tmImage.load(modelURL, metadataURL);
+                maxPredictions = model.getTotalClasses();
+
+                const flip = true;
+                webcam = new tmImage.Webcam(640, 640, flip);
+                
+                await webcam.setup({ facingMode: "user" });
+                await webcam.play();
+                
+                document.getElementById("webcam-container").appendChild(webcam.canvas);
+                labelContainer = document.getElementById("label-container");
+                
+                const div = document.createElement("div");
+                div.className = "prediction";
+                div.id = "detected-face";
+                labelContainer.appendChild(div);
+                currentPredictionDiv = div;
+
+                isModelLoaded = true;
+                updateStatus("✅ ระบบพร้อมใช้งาน! รอการตรวจจับใบหน้า...", "ready");
+                
+                window.requestAnimationFrame(loop);
+                
+            } catch (error) {
+                console.error("Error loading model:", error);
+                updateStatus("❌ เกิดข้อผิดพลาดในการโหลดระบบ: " + error.message, "error");
+            }
+        }
+
+        async function loop() {
+            webcam.update();
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        async function predict() {
+            if (!isModelLoaded) return;
+
+            try {
+                const prediction = await model.predict(webcam.canvas);
+                let highestPrediction = null;
+                let highestProbability = 0;
+                
+                for (let i = 0; i < maxPredictions; i++) {
+                    const probability = prediction[i].probability;
+                    const className = prediction[i].className;
+                    
+                    if (probability > highestProbability) {
+                        highestProbability = probability;
+                        highestPrediction = className;
+                    }
+                }
+                
+                // --- กำหนดค่า Thresholds (เพิ่มประสิทธิภาพการทำงาน) ---
+                const CONFIDENCE_THRESHOLD_RECORD = 0.90; // ต้องมั่นใจ 90% ขึ้นไปถึงจะบันทึก
+                const CONFIDENCE_THRESHOLD_SHOW = 0.70;   // 70% ขึ้นไปจะแสดงผลบนหน้าจอ
+
+                // ตรวจสอบสถานะใบหน้า
+                if (highestProbability >= CONFIDENCE_THRESHOLD_SHOW && highestPrediction !== "Unknown") {
+                    
+                    // พบใบหน้าที่รู้จักและมีความมั่นใจเพียงพอที่จะแสดง
+                    currentPredictionDiv.innerHTML = `👤 IDENTITY: ${highestPrediction} [${(highestProbability * 100).toFixed(1)}%]`;
+                    currentPredictionDiv.classList.add("show");
+
+                    // --- เงื่อนไขการบันทึก (Recording Logic) ---
+                    if (highestProbability >= CONFIDENCE_THRESHOLD_RECORD) {
+                        
+                        // ถ้าเป็นคนเดิมที่ถูกบันทึกไปแล้ว (ป้องกันการบันทึกซ้ำ)
+                        if (highestPrediction === lastDetectedPerson) {
+                            return; 
+                        }
+                        
+                        // เป็นคนใหม่ (บันทึก)
+                        lastDetectedPerson = highestPrediction; // ตั้งค่า Cooldown/คนล่าสุด
+                        showDetectedPerson(highestPrediction);
+                        recordAttendance(highestPrediction, highestProbability);
+                        
+                    } else {
+                        // พบใบหน้าแต่ความมั่นใจไม่ถึง 90%
+                        if (lastDetectedPerson === null) {
+                            updateStatus("🟡 พบใบหน้า: รอยืนยันความแม่นยำ...", "loading");
+                        }
+                    }
+                    
+                } else { 
+                    // --- สถานะไม่พบใบหน้า/ไม่รู้จัก (Unknown/Low Confidence) ---
+                    
+                    currentPredictionDiv.innerHTML = `🚫 ACCESS DENIED / UNKNOWN`;
+                    currentPredictionDiv.classList.add("show");
+                    
+                    // ถ้าระบบเคยบันทึกคนล่าสุดไปแล้ว และตอนนี้ไม่พบใครแล้ว
+                    if (lastDetectedPerson !== null) {
+                        lastDetectedPerson = null; // ล้างสถานะ Cooldown
+                        hideDetectedPerson();
+                    }
+                    // ปรับสถานะเป็นพร้อมใช้งาน
+                    updateStatus("✅ ระบบพร้อมใช้งาน! รอการตรวจจับใบหน้า...", "ready");
+                }
+                
+            } catch (error) {
+                console.error("Prediction error:", error);
+                updateStatus("❌ เกิดข้อผิดพลาดในการทำนาย: " + error.message, "error");
+            }
+        }
+
+        function showDetectedPerson(name) {
+            const detectedDiv = document.getElementById("detected-person");
+            detectedDiv.innerHTML = `
+                <div class="detected-name">
+                    ACCESS GRANTED: ${name}<br>
+                    <span style="font-size: 18px;">บันทึกเวลาเข้าเรียบร้อย</span>
+                </div>
+            `;
+            detectedDiv.style.display = "block";
+            updateStatus(`🎉 ACCESS GRANTED: ${name} - บันทึกเรียบร้อย!`, "success");
+        }
+
+        function hideDetectedPerson() {
+            const detectedDiv = document.getElementById("detected-person");
+            detectedDiv.style.display = "none";
+            updateStatus("✅ ระบบพร้อมใช้งาน! รอการตรวจจับใบหน้า...", "ready");
+        }
+
+        function recordAttendance(name, confidence) {
+            const now = new Date();
+            const timeStr = now.toLocaleString('th-TH');
+            
+            const entry = {
+                name: name,
+                time: timeStr,
+                confidence: (confidence * 100).toFixed(1),
+                timestamp: now
+            };
+            
+            attendanceLog.push(entry);
+            updateAttendanceList();
+            sendToGoogleSheets(entry);
+        }
+
+        function updateAttendanceList() {
+            const listElement = document.getElementById("attendance-list");
+            listElement.innerHTML = "";
+            
+            const recentEntries = attendanceLog.slice(-10).reverse();
+            
+            recentEntries.forEach((entry, index) => {
+                const div = document.createElement("div");
+                div.className = index === 0 ? "log-entry success" : "log-entry";
+                div.innerHTML = `
+                    <strong>[TIME: ${entry.time.split(',')[1].trim()}]</strong> 
+                    <span style="float: right;">ID: ${entry.name}</span>
+                `;
+                listElement.appendChild(div);
+            });
+            
+            if (attendanceLog.length === 0) {
+                listElement.innerHTML = '<div class="log-entry">รอการตรวจสอบใบหน้า...</div>';
+            }
+        }
+
+        function updateStatus(message, type) {
+            const statusElement = document.getElementById("status");
+            statusElement.textContent = message;
+            statusElement.className = `status ${type}`;
+        }
+
+        async function sendToGoogleSheets(entry) {
+            try {
+                // URL Web App Script ของคุณ (ห้ามลืม Deploy เป็นเวอร์ชันใหม่ทุกครั้งที่แก้โค้ด Apps Script)
+                const WEBAPP_URL = "https://script.google.com/macros/s/AKfycby8ljYx76YYaZGt5gh3hv8_V11jVqWhTtb6Fsw2cx9hsIA7sQtPVrEAVl-baJnktI4-dw/exec";
+                
+                const urlWithParams = `${WEBAPP_URL}?name=${encodeURIComponent(entry.name)}&time=${encodeURIComponent(entry.time)}&confidence=${encodeURIComponent(entry.confidence)}`;
+                
+                console.log("กำลังส่งคำขอไปยัง Google Sheets");
+
+                // ใช้ mode: 'no-cors' เพื่อแก้ไขปัญหา 'Failed to fetch' เมื่อรันผ่าน Local Server
+                const response = await fetch(urlWithParams, {
+                    method: 'GET',
+                    mode: 'no-cors' 
+                });
+
+                console.log("ส่งคำขอสำเร็จ (ไม่สามารถตรวจสอบผลลัพธ์การบันทึกได้เนื่องจาก no-cors)");
+                
+            } catch (error) {
+                console.error("Error sending to Google Sheets:", error);
+                // ไม่ต้องแจ้งเตือนผู้ใช้ด้วย alert เพื่อไม่ให้รบกวนการทำงานแบบเรียลไทม์
+            }
+        }
+
+        window.addEventListener('load', function() {
+            updateStatus("คลิก 'เริ่มต้นระบบ' เพื่อเริ่มใช้งาน", "loading");
+        });
+    </script>
+</body>
+</html>
